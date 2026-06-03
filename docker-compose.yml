@@ -12,10 +12,14 @@ services:
     container_name: leadtracker
     restart: unless-stopped
 
-    # Variáveis server-side (runtime): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY,
-    # SUPABASE_SERVICE_ROLE_KEY, PORT. Ficam no .env (fora do git).
-    env_file:
-      - .env
+    # Variáveis server-side (runtime). Vêm das "Environment variables" da stack
+    # no Portainer (substituição ${...}). Localmente, o compose lê o .env do
+    # diretório automaticamente para preencher essas mesmas variáveis.
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_PUBLISHABLE_KEY=${SUPABASE_PUBLISHABLE_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - PORT=${PORT:-3000}
 
     networks:
       - traefik-net
