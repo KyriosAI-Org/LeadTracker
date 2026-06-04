@@ -38,5 +38,9 @@ ENV NODE_ENV=production \
 # dist/client. Nada de npm install aqui.
 COPY --from=build /app/dist ./dist
 
+# Garante que o usuário node tenha permissão nos arquivos copiados.
+RUN chown -R node:node /app
+USER node
+
 EXPOSE 3000
 CMD ["node", "dist/server/index.mjs"]

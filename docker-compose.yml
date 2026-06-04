@@ -8,8 +8,8 @@ services:
         VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
         VITE_SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY}
         VITE_SUPABASE_PROJECT_ID: ${VITE_SUPABASE_PROJECT_ID}
-    image: leadtracker:latest
-    container_name: leadtracker
+    # image: leadtracker:latest
+    # Removido container_name para permitir múltiplas instâncias (staging/prod) na mesma stack
     restart: unless-stopped
 
     # Variáveis server-side (runtime). Vêm das "Environment variables" da stack
@@ -31,10 +31,16 @@ services:
       retries: 3
       start_period: 20s
 
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+
     labels:
       - traefik.enable=true
       - traefik.docker.network=traefik-net
-      - traefik.http.routers.leadtracker.rule=Host(`leadtracker.kyriosai.me`)
+      - traefik.http.routers.leadtracker.rule=Host(`${APP_DOMAIN}`)
       - traefik.http.routers.leadtracker.entrypoints=websecure
       - traefik.http.routers.leadtracker.tls=true
       - traefik.http.routers.leadtracker.tls.certresolver=letsencrypt
