@@ -1,0 +1,36 @@
+services:
+  leadtracker:
+    # Imagem pré-construída via GitHub Actions (GHCR)
+    image: ghcr.io/kyriosai-org/leadtracker:latest
+    restart: unless-stopped
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_PUBLISHABLE_KEY=${SUPABASE_PUBLISHABLE_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - PORT=${PORT:-3000}
+      - APP_DOMAIN=${APP_DOMAIN}
+    networks:
+      - traefik-net
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-net
+      - traefik.http.routers.leadtracker.rule=Host(`${APP_DOMAIN}`)
+      - traefik.http.routers.leadtracker.entrypoints=websecure
+      - traefik.http.routers.leadtracker.tls=true
+      - traefik.http.routers.leadtracker.tls.certresolver=letsencrypt
+      - traefik.http.services.leadtracker.loadbalancer.server.port=3000
+
+networks:
+  traefik-net:
+    external: true

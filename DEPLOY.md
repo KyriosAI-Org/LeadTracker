@@ -43,32 +43,34 @@
 | `PORT` | runtime (default 3000) | Não |
 | `APP_DOMAIN` | runtime/labels (ex: `leadtracker.meudominio.com`) | Não |
 
-As `VITE_*` são lidas em tempo de build (Vite faz a substituição estática), por
-isso o `docker-compose.yml` as passa como `build args`. As demais são injetadas
-em runtime via variáveis de ambiente da Stack no Portainer.
+As `VITE_*` são lidas em tempo de build (Vite faz a substituição estática).
 
-## Passo a passo (Portainer)
+### Opção A: Deploy via Repositório (Build na VPS)
+1. **DNS**: aponte o registro `A` para a VPS.
+2. **Código**: clone o repo e crie o `.env`.
+3. **Stack**: No Portainer, aponte para o repositório Git. O Compose construirá a imagem localmente.
 
-1. **DNS**: crie um registro `A` de `seu-app.dominio.com` apontando para o IP da VPS.
-2. **Rede**: confirme que a rede externa do Traefik existe (provavelmente já):
-   ```bash
-   docker network ls | grep traefik-net   # se não existir: docker network create traefik-net
-   ```
-3. **Código + segredos na VPS**: clone o repositório e crie o `.env` a partir do
-   modelo (o `.env` **não** vai no git):
-   ```bash
-   cp .env.example .env && nano .env   # preencha as chaves do Supabase e o APP_DOMAIN
-   ```
-4. **Stack no Portainer**:
-   - *Stacks → Add stack → Repository* apontando para este repo (o compose tem
-     `build:`, então o Portainer constrói a imagem na VPS), **ou**
-   - *Web editor*: cole o `docker-compose.yml`. Nesse caso garanta que o `.env`
-     esteja no diretório do build.
-   - Em **Environment variables** do Portainer, preencha todas as variáveis (VITE_*, SUPABASE_*, APP_DOMAIN).
-5. **Deploy**. O Traefik detecta as labels e emite o certificado automaticamente.
-   Acesse o domínio configurado em `APP_DOMAIN`.
+### Opção B: Deploy via Imagem (GHCR.io + Portainer)
+Esta é a opção recomendada para produção (mais rápida e desacoplada do código fonte na VPS).
+
+1. **Configurar GitHub Secrets**:
+   No GitHub (*Settings -> Secrets -> Actions*), adicione:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_PUBLISHABLE_KEY`
+   - `VITE_SUPABASE_PROJECT_ID`
+2. **Build**: O GitHub Actions criará a imagem automaticamente no GHCR a cada push na `main`.
+3. **Portainer**:
+   - Vá em *Stacks -> Add stack -> Web editor*.
+   - Cole o conteúdo de `docker-compose.portainer.yml`.
+   - Substitua a linha da `image:` pelo caminho real da sua imagem no GHCR (ex: `ghcr.io/kyriosai-org/leadtracker:latest`).
+   - Configure as **Environment variables** (Runtime) na interface do Portainer:
+     - `SUPABASE_URL`
+     - `SUPABASE_PUBLISHABLE_KEY`
+     - `SUPABASE_SERVICE_ROLE_KEY`
+     - `APP_DOMAIN`
 
 ## Otimizações de Produção
+
 - **Segurança**: O container roda com usuário não-privilegiado (`node`).
 - **Escalabilidade**: `container_name` foi removido para permitir múltiplas instâncias.
 - **Recursos**: Limites de CPU (0.5) e Memória (512MB) configurados via Compose.
